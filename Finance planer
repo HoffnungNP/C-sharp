@@ -1,0 +1,227 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+
+class Program
+{
+
+    static List<Income> incomes = new List<Income>();
+    static List<Expense> expenses = new List<Expense>();
+    static List<Subscription> subscriptions = new List<Subscription>();
+
+    static void Main()
+    {
+        while (true)
+        {
+            Console.WriteLine("\n=== Personal Finance Planner ===");
+            Console.WriteLine("1) Incomes");
+            Console.WriteLine("2) Expenses");
+            Console.WriteLine("3) Subscriptions");
+            Console.WriteLine("4) Show All");
+            Console.WriteLine("5) Monthly Report");
+            Console.WriteLine("6) Import/Export JSON");
+            Console.WriteLine("0) Exit");
+            Console.Write("Choose: ");
+
+            string choice = Console.ReadLine();
+            if (choice == "0") break;
+
+            if (choice == "1") IncomeMenu();
+            else if (choice == "2") ExpenseMenu();
+            else if (choice == "3") SubscriptionMenu();
+            else if (choice == "4") ShowAll();
+            else if (choice == "5") MonthlyReport();
+            else if (choice == "6") ImportExportJSON();
+            else Console.WriteLine("Invalid choice!");
+        }
+    }
+    static void IncomeMenu()
+    {
+        Console.WriteLine("n1) Add Income  2) Show Incomes");
+        string c = Console.ReadLine();
+        if (c == "1") AddIncome();
+        else if (c == "2") ShowIncomes();
+    }
+
+    static void AddIncome()
+    {
+        Console.Write("Date (YYYY-MM-DD): ");
+        DateTime date = DateTime.Parse(Console.ReadLine());
+
+        Console.Write("Source: ");
+        string source = Console.ReadLine();
+
+        Console.Write("Amount: ");
+        decimal amount = decimal.Parse(Console.ReadLine());
+
+        incomes.Add(new Income(date, source, amount));
+        Console.WriteLine("Income added!");
+    }
+
+    static void ShowIncomes()
+    {
+        if (incomes.Count == 0) { Console.WriteLine("No incomes."); return; }
+        foreach (var i in incomes)
+            Console.WriteLine($"{i.Date:yyyy-MM-dd} | {i.Source} | {i.Amount} €");
+    }
+
+    static void ExpenseMenu()
+    {
+        Console.WriteLine("n1) Add Expense  2) Show Expenses");
+        string c = Console.ReadLine();
+        if (c == "1") AddExpense();
+        else if (c == "2") ShowExpenses();
+    }
+
+    static void AddExpense()
+    {
+        Console.Write("Date (YYYY-MM-DD): ");
+        DateTime date = DateTime.Parse(Console.ReadLine());
+
+        Console.Write("Category (Food/Transport/Fun/School/Other): ");
+        string category = Console.ReadLine();
+
+        Console.Write("Amount: ");
+        decimal amount = decimal.Parse(Console.ReadLine());
+
+        Console.Write("Note: ");
+        string note = Console.ReadLine();
+
+        expenses.Add(new Expense(date, category, amount, note));
+        Console.WriteLine("Expense added!");
+    }
+
+    static void ShowExpenses()
+    {
+        if (expenses.Count == 0) { Console.WriteLine("No expenses."); return; }
+        foreach (var e in expenses)
+            Console.WriteLine($"{e.Date:yyyy-MM-dd} | {e.Category} | {e.Amount} € | {e.Note}");
+    }
+
+    static void SubscriptionMenu()
+    {
+        Console.WriteLine("n1) Add Subscription  2) Show Subscriptions");
+        string c = Console.ReadLine();
+        if (c == "1") AddSubscription();
+        else if (c == "2") ShowSubscriptions();
+    }
+
+    static void AddSubscription()
+    {
+        Console.Write("Name: ");
+        string name = Console.ReadLine();
+
+        Console.Write("Monthly Price: ");
+        decimal price = decimal.Parse(Console.ReadLine());
+
+        Console.Write("Start Date (YYYY-MM-DD): ");
+        DateTime date = DateTime.Parse(Console.ReadLine());
+
+        subscriptions.Add(new Subscription(name, price, date));
+        Console.WriteLine("Subscription added!");
+    }
+
+    static void ShowSubscriptions()
+    {
+        if (subscriptions.Count == 0) { Console.WriteLine("No subscriptions."); return; }
+        foreach (var s in subscriptions)
+            Console.WriteLine($"{s.StartDate:yyyy-MM-dd} | {s.Name} | {s.MonthlyPrice} €");
+    }
+
+
+    static void ShowAll()
+    {
+        Console.WriteLine("\n--- All Records ---");
+        foreach (var i in incomes) Console.WriteLine($"Income: {i.Date:yyyy-MM-dd} | {i.Source} | {i.Amount} €");
+        foreach (var e in expenses) Console.WriteLine($"Expense: {e.Date:yyyy-MM-dd} | {e.Category} | {e.Amount} € | {e.Note}");
+        foreach (var s in subscriptions) Console.WriteLine($"Subscription: {s.StartDate:yyyy-MM-dd} | {s.Name} | {s.MonthlyPrice} €");
+    }
+
+
+    static void MonthlyReport()
+    {
+        Console.Write("Enter month (YYYY-MM): ");
+        string input = Console.ReadLine() + "-01";
+        DateTime monthStart = DateTime.Parse(input);
+        DateTime nextMonth = monthStart.AddMonths(1);
+
+        decimal incomeSum = 0, expenseSum = 0, subsSum = 0;
+
+        foreach (var i in incomes)
+            if (i.Date >= monthStart && i.Date < nextMonth) incomeSum += i.Amount;
+
+        foreach (var e in expenses)
+            if (e.Date >= monthStart && e.Date < nextMonth) expenseSum += e.Amount;
+
+        foreach (var s in subscriptions)
+            if (s.StartDate <= nextMonth) subsSum += s.MonthlyPrice;
+
+        decimal net = incomeSum - expenseSum - subsSum;
+
+        Console.WriteLine($"\n--- Report for {monthStart:yyyy-MM} ---");
+        Console.WriteLine($"Incomes: {incomeSum} €");
+        Console.WriteLine($"Expenses: {expenseSum} €");
+        Console.WriteLine($"Subscriptions: {subsSum} €");
+        Console.WriteLine($"Net: {net} €");
+    }
+
+
+    static void ImportExportJSON()
+    {
+        Console.WriteLine("1) Export  2) Import");
+        string c = Console.ReadLine();
+        if (c == "1")
+        {
+            var obj = new { incomes, expenses, subscriptions };
+            string json = JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine(json);
+        }
+        else if (c == "2")
+        {
+            Console.WriteLine("Paste JSON:");
+            string json = Console.ReadLine();
+            try
+            {
+                var data = JsonSerializer.Deserialize<Data>(json);
+                incomes = data.incomes;
+                expenses = data.expenses;
+                subscriptions = data.subscriptions;
+                Console.WriteLine("Data imported!");
+            }
+            catch { Console.WriteLine("Invalid JSON!"); }
+        }
+    }
+}
+
+
+class Income
+{
+    public DateTime Date { get; set; }
+    public string Source { get; set; }
+    public decimal Amount { get; set; }
+    public Income(DateTime d, string s, decimal a) { Date = d; Source = s; Amount = a; }
+}
+
+class Expense
+{
+    public DateTime Date { get; set; }
+    public string Category { get; set; }
+    public decimal Amount { get; set; }
+    public string Note { get; set; }
+    public Expense(DateTime d, string c, decimal a, string n) { Date = d; Category = c; Amount = a; Note = n; }
+}
+
+class Subscription
+{
+    public string Name { get; set; }
+    public decimal MonthlyPrice { get; set; }
+    public DateTime StartDate { get; set; }
+    public Subscription(string n, decimal p, DateTime d) { Name = n; MonthlyPrice = p; StartDate = d; }
+}
+
+class Data
+{
+    public List<Income> incomes { get; set; }
+    public List<Expense> expenses { get; set; }
+    public List<Subscription> subscriptions { get; set; }
+}
